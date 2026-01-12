@@ -93,7 +93,7 @@ export default function ZytechForm() {
           <div>
             <div className="flex items-center gap-2 mb-10 text-indigo-400">
                <Cpu size={24} />
-               <span className="font-bold text-xl tracking-tight text-white">Zytech<span className="text-indigo-500">.io</span></span>
+               <span className="font-bold text-xl tracking-tight text-white">Zytech<span className="text-indigo-500">.forms</span></span>
             </div>
             
             <nav className="space-y-6">
