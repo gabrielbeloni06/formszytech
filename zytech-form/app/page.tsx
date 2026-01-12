@@ -148,7 +148,7 @@ export default function ZytechForm() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <ServiceCard 
                                 id="chatbot" 
-                                title="Automação & IA" 
+                                title="Chatbots" 
                                 desc="Chatbots inteligentes para WhatsApp e CRM."
                                 icon={<Bot size={32} />}
                                 register={register}
