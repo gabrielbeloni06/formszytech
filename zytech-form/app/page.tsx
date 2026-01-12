@@ -116,7 +116,7 @@ export default function ZytechForm() {
           </div>
           
           <div className="hidden md:block text-xs text-slate-600">
-            © 2024 Zytech Systems
+            © 2025 Zytech Softwares
           </div>
         </div>
 
@@ -168,7 +168,7 @@ export default function ZytechForm() {
                     {step === 2 && (
                         <div className="space-y-6">
                             <div className="grid grid-cols-1 gap-5">
-                                <InputGroup label="Nome da Empresa" placeholder="Ex: Zytech Solutions" register={register} name="nome_empresa" required />
+                                <InputGroup label="Nome da Empresa" placeholder="Ex: Empresa X" register={register} name="nome_empresa" required />
                                 <InputGroup label="WhatsApp Principal" placeholder="(11) 99999-9999" register={register} name="whatsapp" required />
                             </div>
 
