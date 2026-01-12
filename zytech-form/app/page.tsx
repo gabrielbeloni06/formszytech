@@ -5,81 +5,72 @@ import { useForm } from 'react-hook-form';
 import { createClient } from '@supabase/supabase-js';
 import { 
   Moon, Sun, CheckCircle, ArrowRight, 
-  Bot, ShieldCheck, Zap, Cpu, Upload, Store 
+  Bot, ShieldCheck, Zap, Cpu, Upload, Store, 
+  Globe, Layout, Lock, Code, MessageSquare, Briefcase, Settings
 } from 'lucide-react';
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function ZytechForm() {
+
   const [step, setStep] = useState(1);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+
+  const { register, handleSubmit, watch, setValue, resetField, formState: { errors } } = useForm();
   
-  const { register, handleSubmit, watch, formState: { errors } } = useForm();
-  
-  const produtoEscolhido = watch("produto_escolhido");
-  const segmentoEscolhido = watch("segmento");
+  const segmento = watch("segmento");
+  const categoria = watch("categoria_servico"); 
+  const produto = watch("produto_plano");
 
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    if (isDarkMode) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
   }, [isDarkMode]);
+
+  useEffect(() => {
+    setValue("produto_plano", null); 
+  }, [categoria, setValue]);
 
   const onSubmit = async (data: any) => {
     setIsLoading(true);
-    
     let jsonPayload = {};
 
-    if (data.produto_escolhido === 'ZyStart') {
-      jsonPayload = {
-        saudacao: data.saudacao,
-        opcoes_menu: data.opcoes_menu 
-      };
-    } 
-    else if (data.produto_escolhido === 'ZyControl') {
-      jsonPayload = {
-        saudacao: data.saudacao,
-        logica_fluxo: data.logica_extra 
-      };
+    if (data.categoria_servico === 'chatbot') {
+      if (data.produto_plano === 'ZyStart') jsonPayload = { saudacao: data.bot_saudacao, opcoes: data.bot_opcoes };
+      if (data.produto_plano === 'ZyControl') jsonPayload = { saudacao: data.bot_saudacao, logica: data.bot_logica };
+      if (data.produto_plano === 'ZyBotAI') jsonPayload = { funcs: data.bot_checklist, base: data.bot_base };
+      if (data.produto_plano === 'ZyCore') jsonPayload = { persona: data.bot_persona, escopo: data.bot_custom };
+      jsonPayload = { ...jsonPayload, link_catalogo: data.link_catalogo };
     }
-    else if (data.produto_escolhido === 'ZyBotAI') {
-      jsonPayload = {
-        funcionalidades: data.checklist_ia || [], 
-        base_conhecimento: data.base_conhecimento
-      };
-    }
-    else if (data.produto_escolhido === 'ZyCore') {
-      jsonPayload = {
-        personalidade_ia: data.persona,
-        escopo_tecnico: data.escopo_custom
-      };
+
+    if (data.categoria_servico === 'website') {
+      const baseSite = { tem_identidade_visual: data.site_identidade, referencias: data.site_referencias };
+      
+      if (data.produto_plano === 'WebStart') jsonPayload = { ...baseSite, paginas_extras: data.site_paginas };
+      if (data.produto_plano === 'WebControl') jsonPayload = { ...baseSite, tipo_login: data.site_login, dashboard: data.site_dashboard };
+      if (data.produto_plano === 'WebCore') jsonPayload = { ...baseSite, escopo_avancado: data.site_custom };
     }
 
     try {
-      const { error } = await supabase
-        .from('leads_chatbot') 
-        .insert({
-          nome_empresa: data.nome_empresa,
-          whatsapp: data.whatsapp,
-          segmento: data.segmento,
-          ramo_atividade: data.ramo_atividade, 
-          produto_escolhido: data.produto_escolhido,
-          link_catalogo: data.link_catalogo,
-          
-          dados_especificos: jsonPayload 
-        });
+      const { error } = await supabase.from('leads_zytech').insert({
+        nome_empresa: data.nome_empresa,
+        whatsapp: data.whatsapp,
+        segmento: data.segmento,
+        ramo_atividade: data.ramo_atividade,
+        categoria_servico: data.categoria_servico,
+        produto_plano: data.produto_plano,
+        dados_tecnicos: jsonPayload
+      });
 
       if (error) throw error;
-
-      alert("🚀 Sucesso! A Zytech recebeu seu projeto. Entraremos em contato em breve.");
-      
+      alert("🚀 Sucesso! A Zytech recebeu seu projeto.");
     } catch (error) {
-      console.error('Erro ao salvar:', error);
-      alert("Erro ao enviar solicitação. Verifique sua conexão ou tente novamente.");
+      console.error(error);
+      alert("Erro ao enviar. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -90,329 +81,236 @@ export default function ZytechForm() {
       
       <header className="p-6 flex justify-between items-center max-w-6xl mx-auto border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center font-bold text-black shadow-lg shadow-green-500/20">
-            Z
-          </div>
+          <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center font-bold text-black shadow-lg shadow-green-500/20">Z</div>
           <span className="font-bold text-2xl tracking-tight">Zytech</span>
         </div>
-        
-        <button 
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className={`p-2.5 rounded-full transition-all ${isDarkMode ? 'bg-zinc-800 hover:bg-zinc-700 text-yellow-400' : 'bg-white hover:bg-gray-100 text-indigo-600 shadow-sm border border-gray-200'}`}
-        >
+        <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-yellow-400">
           {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
         </button>
       </header>
 
       <main className="max-w-5xl mx-auto p-6 md:py-12">
         
-        <div className="flex justify-center mb-16 relative">
-          <div className="absolute top-1/2 left-0 w-full h-0.5 bg-zinc-200 dark:bg-zinc-800 -z-10 transform -translate-y-1/2 hidden md:block max-w-lg mx-auto left-0 right-0"></div>
-          <div className="flex items-center gap-4 md:gap-32">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex flex-col items-center gap-2">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-500 border-4 
-                  ${step >= s 
-                    ? 'bg-green-500 border-green-500 text-black scale-110 shadow-lg shadow-green-500/30' 
-                    : 'bg-zinc-100 dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-400'}`}
-                >
-                  {s}
-                </div>
-                <span className={`text-xs font-bold uppercase tracking-wider ${step >= s ? 'text-green-500' : 'text-zinc-400'}`}>
-                  {s === 1 ? 'Empresa' : s === 2 ? 'Solução' : 'Detalhes'}
-                </span>
+        <div className="flex justify-center mb-12">
+          <div className="flex items-center gap-4 md:gap-16">
+            {[1, 2, 3, 4].map((s) => (
+              <div key={s} className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold border-2 transition-all 
+                ${step >= s ? 'bg-green-500 border-green-500 text-black' : 'bg-zinc-900 border-zinc-700 text-zinc-500'}`}>
+                {s}
               </div>
             ))}
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="animate-fade-in-up">
-          
+
           {step === 1 && (
             <div className="max-w-lg mx-auto space-y-6">
-              <div className="text-center mb-8">
-                <h1 className="text-4xl font-extrabold mb-2 bg-gradient-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent">Vamos começar</h1>
-                <p className="text-zinc-500 dark:text-zinc-400">Preencha os dados básicos para iniciarmos.</p>
-              </div>
-
-              <div className="space-y-5">
-                <div className="group">
-                  <label className="block text-sm font-medium mb-1.5 ml-1 text-zinc-600 dark:text-zinc-300">Nome da Empresa</label>
-                  <input 
-                    {...register("nome_empresa", { required: true })}
-                    className="w-full p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all placeholder:text-zinc-400"
-                    placeholder="Ex: Zytech Solutions"
-                  />
-                  {errors.nome_empresa && <span className="text-red-500 text-xs ml-1">Campo obrigatório</span>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5 ml-1 text-zinc-600 dark:text-zinc-300">WhatsApp</label>
-                  <input 
-                    {...register("whatsapp", { required: true })}
-                    className="w-full p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-                    placeholder="(00) 00000-0000"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5 ml-1 text-zinc-600 dark:text-zinc-300">Segmento</label>
-                  <div className="relative">
-                    <select 
-                      {...register("segmento", { required: true })}
-                      className="w-full p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 focus:ring-2 focus:ring-green-500 outline-none transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="">Selecione uma opção...</option>
-                      <option value="delivery">🛵 Delivery / Alimentação</option>
-                      <option value="comercio">🏪 Comércio / Loja / Serviços</option>
-                      <option value="outro">🌐 Outro</option>
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">▼</div>
-                  </div>
-                </div>
-
-                {/* CONDICIONAL: Ramo de Atividade (Aparece só se for Comércio) */}
-                {segmentoEscolhido === 'comercio' && (
-                  <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                    <label className="block text-sm font-medium mb-1.5 ml-1 text-zinc-600 dark:text-zinc-300 flex items-center gap-2">
-                      <Store size={16} className="text-green-500" /> Qual o ramo específico?
-                    </label>
-                    <input 
-                      {...register("ramo_atividade", { required: true })}
-                      className="w-full p-3.5 rounded-xl border border-green-500/30 bg-green-50/50 dark:bg-green-900/10 focus:ring-2 focus:ring-green-500 outline-none transition-all"
-                      placeholder="Ex: Loja de Roupas, Clínica, Petshop..."
-                    />
-                  </div>
+              <h1 className="text-4xl font-bold text-center mb-2">Quem é você?</h1>
+              <div className="space-y-4">
+                <input {...register("nome_empresa", { required: true })} className="input-zytech" placeholder="Nome da Empresa" />
+                <input {...register("whatsapp", { required: true })} className="input-zytech" placeholder="WhatsApp (00) 00000-0000" />
+                <select {...register("segmento", { required: true })} className="input-zytech">
+                  <option value="">Selecione o Segmento...</option>
+                  <option value="delivery">Delivery</option>
+                  <option value="comercio">Comércio / Serviços</option>
+                </select>
+                {segmento === 'comercio' && (
+                  <input {...register("ramo_atividade")} className="input-zytech border-green-500/50" placeholder="Qual seu ramo de atividade?" />
                 )}
               </div>
-
-              <button 
-                type="button" 
-                onClick={() => setStep(2)} 
-                className="w-full mt-8 bg-zinc-900 dark:bg-white text-white dark:text-black font-bold py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl"
-              >
-                Próximo Passo <ArrowRight size={20} />
-              </button>
+              <button type="button" onClick={() => setStep(2)} className="btn-primary w-full mt-4">Próximo <ArrowRight /></button>
             </div>
           )}
 
           {step === 2 && (
-            <div>
-              <div className="text-center mb-10">
-                <h1 className="text-3xl font-bold mb-3">Escolha sua arquitetura</h1>
-                <p className="text-zinc-500 dark:text-zinc-400">Qual nível de automação sua empresa precisa hoje?</p>
+            <div className="max-w-4xl mx-auto">
+              <h1 className="text-3xl font-bold text-center mb-10">O que vamos construir?</h1>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <label className={`card-select ${categoria === 'chatbot' ? 'ring-2 ring-green-500 bg-zinc-900' : ''}`}>
+                  <input type="radio" value="chatbot" {...register("categoria_servico")} className="hidden" />
+                  <MessageSquare size={40} className="text-green-500 mb-4" />
+                  <h3 className="text-xl font-bold">Chatbots Inteligentes</h3>
+                  <p className="text-zinc-400 mt-2">Atendimento automático via WhatsApp com ou sem IA.</p>
+                </label>
+
+                <label className={`card-select ${categoria === 'website' ? 'ring-2 ring-blue-500 bg-zinc-900' : ''}`}>
+                  <input type="radio" value="website" {...register("categoria_servico")} className="hidden" />
+                  <Globe size={40} className="text-blue-500 mb-4" />
+                  <h3 className="text-xl font-bold">Websites & Sistemas</h3>
+                  <p className="text-zinc-400 mt-2">Landing Pages, Dashboards e Sistemas Web.</p>
+                </label>
+
+                <div className="card-select opacity-50 cursor-not-allowed border-dashed">
+                  <Settings size={40} className="text-zinc-600 mb-4" />
+                  <h3 className="text-xl font-bold">Automações</h3>
+                  <p className="text-zinc-500 mt-2">Em breve</p>
+                </div>
+
+                 <div className="card-select opacity-50 cursor-not-allowed border-dashed">
+                  <Briefcase size={40} className="text-zinc-600 mb-4" />
+                  <h3 className="text-xl font-bold">Consultoria</h3>
+                  <p className="text-zinc-500 mt-2">Em breve</p>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                
-                <label className={`relative group cursor-pointer border rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl
-                  ${produtoEscolhido === 'ZyStart' 
-                    ? 'border-green-500 bg-green-50/50 dark:bg-green-500/10 ring-1 ring-green-500 shadow-lg shadow-green-500/10' 
-                    : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-green-500/50'}`}
-                >
-                  <input type="radio" value="ZyStart" {...register("produto_escolhido")} className="hidden" />
-                  <div className="mb-4 w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 text-green-600 flex items-center justify-center">
-                    <Zap size={24} />
-                  </div>
-                  <h3 className="text-lg font-bold mb-2">ZyStart</h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 h-10 leading-relaxed">
-                    Essencial para quem precisa organizar o atendimento rápido.
-                  </p>
-                  <ul className="space-y-3 text-sm text-zinc-600 dark:text-zinc-300 mb-6">
-                    <li className="flex gap-2 items-center"><CheckCircle size={14} className="text-green-500" /> Menu Numérico</li>
-                    <li className="flex gap-2 items-center"><CheckCircle size={14} className="text-green-500" /> Resposta Imediata</li>
-                  </ul>
-                  <div className={`w-full py-2.5 rounded-lg text-center text-sm font-bold transition-colors ${produtoEscolhido === 'ZyStart' ? 'bg-green-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>
-                    {produtoEscolhido === 'ZyStart' ? 'Selecionado' : 'Selecionar'}
-                  </div>
-                </label>
-
-                <label className={`relative group cursor-pointer border rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl
-                  ${produtoEscolhido === 'ZyControl' 
-                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 ring-1 ring-blue-500 shadow-lg shadow-blue-500/10' 
-                    : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-500/50'}`}
-                >
-                  <input type="radio" value="ZyControl" {...register("produto_escolhido")} className="hidden" />
-                  <div className="mb-4 w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center">
-                    <ShieldCheck size={24} />
-                  </div>
-                  <h3 className="text-lg font-bold mb-2">ZyControl</h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 h-10 leading-relaxed">
-                    Controle de fluxo lógico para triagem eficiente.
-                  </p>
-                  <ul className="space-y-3 text-sm text-zinc-600 dark:text-zinc-300 mb-6">
-                    <li className="flex gap-2 items-center"><CheckCircle size={14} className="text-blue-500" /> Árvore de Decisão</li>
-                    <li className="flex gap-2 items-center"><CheckCircle size={14} className="text-blue-500" /> Painel de Gestão</li>
-                  </ul>
-                  <div className={`w-full py-2.5 rounded-lg text-center text-sm font-bold transition-colors ${produtoEscolhido === 'ZyControl' ? 'bg-blue-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>
-                    {produtoEscolhido === 'ZyControl' ? 'Selecionado' : 'Selecionar'}
-                  </div>
-                </label>
-                <label className={`relative group cursor-pointer border rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl
-                  ${produtoEscolhido === 'ZyBotAI' 
-                    ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-500/10 ring-1 ring-purple-500 shadow-lg shadow-purple-500/10' 
-                    : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-purple-500/50'}`}
-                >
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest shadow-lg shadow-purple-900/50">
-                    Mais Popular
-                  </div>
-                  <input type="radio" value="ZyBotAI" {...register("produto_escolhido")} className="hidden" />
-                  <div className="mb-4 w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center">
-                    <Bot size={24} />
-                  </div>
-                  <h3 className="text-lg font-bold mb-2">ZyBotAI</h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 h-10 leading-relaxed">
-                    Inteligência Artificial treinada com seus dados.
-                  </p>
-                  <ul className="space-y-3 text-sm text-zinc-600 dark:text-zinc-300 mb-6">
-                    <li className="flex gap-2 items-center"><CheckCircle size={14} className="text-purple-500" /> Treinamento PDF</li>
-                    <li className="flex gap-2 items-center"><CheckCircle size={14} className="text-purple-500" /> Linguagem Natural</li>
-                  </ul>
-                  <div className={`w-full py-2.5 rounded-lg text-center text-sm font-bold transition-colors ${produtoEscolhido === 'ZyBotAI' ? 'bg-purple-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>
-                    {produtoEscolhido === 'ZyBotAI' ? 'Selecionado' : 'Selecionar'}
-                  </div>
-                </label>
-
-                <label className={`relative group cursor-pointer border rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl
-                  ${produtoEscolhido === 'ZyCore' 
-                    ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-500/10 ring-1 ring-orange-500 shadow-lg shadow-orange-500/10' 
-                    : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-orange-500/50'}`}
-                >
-                  <input type="radio" value="ZyCore" {...register("produto_escolhido")} className="hidden" />
-                  <div className="mb-4 w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-600 flex items-center justify-center">
-                    <Cpu size={24} />
-                  </div>
-                  <h3 className="text-lg font-bold mb-2">ZyCore</h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 h-10 leading-relaxed">
-                    Arquitetura personalizada com integrações via API.
-                  </p>
-                  <ul className="space-y-3 text-sm text-zinc-600 dark:text-zinc-300 mb-6">
-                    <li className="flex gap-2 items-center"><CheckCircle size={14} className="text-orange-500" /> Integrações API</li>
-                    <li className="flex gap-2 items-center"><CheckCircle size={14} className="text-orange-500" /> 100% Customizável</li>
-                  </ul>
-                  <div className={`w-full py-2.5 rounded-lg text-center text-sm font-bold transition-colors ${produtoEscolhido === 'ZyCore' ? 'bg-orange-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>
-                    {produtoEscolhido === 'ZyCore' ? 'Selecionado' : 'Selecionar'}
-                  </div>
-                </label>
-
-              </div>
-
-              <div className="flex gap-4 mt-10 justify-center max-w-lg mx-auto">
-                <button type="button" onClick={() => setStep(1)} className="w-1/3 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold py-3.5 rounded-xl hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">
-                  Voltar
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setStep(3)} 
-                  disabled={!produtoEscolhido}
-                  className="w-2/3 bg-zinc-900 dark:bg-white text-white dark:text-black font-bold py-3.5 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl"
-                >
-                  Continuar
-                </button>
+              <div className="flex gap-4 mt-10 justify-center">
+                <button type="button" onClick={() => setStep(1)} className="btn-secondary">Voltar</button>
+                <button type="button" onClick={() => setStep(3)} disabled={!categoria} className="btn-primary">Continuar</button>
               </div>
             </div>
           )}
 
           {step === 3 && (
-            <div className="max-w-xl mx-auto space-y-8 animate-fade-in-up">
-              <div className="text-center">
-                <h1 className="text-3xl font-bold mb-2">Configurando o <span className="text-green-500">{produtoEscolhido}</span></h1>
-                <p className="text-zinc-500 dark:text-zinc-400">Precisamos de alguns detalhes técnicos para o orçamento.</p>
-              </div>
-              
-              <div className="space-y-6">
-                
-                <div className="bg-zinc-50 dark:bg-zinc-900/30 p-5 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 hover:border-green-500 transition-colors">
-                  <label className="block text-sm font-bold mb-3 flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
-                    <Upload size={18} className="text-green-500" /> Link do Catálogo ou Cardápio
-                  </label>
-                  <input 
-                    {...register("link_catalogo")}
-                    placeholder="Cole aqui o link do Google Drive, PDF ou seu site atual..."
-                    className="w-full p-3.5 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:ring-2 focus:ring-green-500 outline-none"
+            <div className="max-w-6xl mx-auto">
+              <h1 className="text-3xl font-bold text-center mb-10">Escolha o Plano {categoria === 'chatbot' ? 'do Bot' : 'do Site'}</h1>
+
+              {categoria === 'chatbot' && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <PlanCard 
+                    id="ZyStart" icon={<Zap />} title="ZyStart" desc="Menu numérico simples" color="green" register={register} selected={produto} 
+                    features={['Menu Básico', 'Respostas Rápidas']} 
                   />
-                  <p className="text-xs text-zinc-400 mt-2">Isso ajuda a entender a complexidade do banco de dados do bot.</p>
+                  <PlanCard 
+                    id="ZyControl" icon={<ShieldCheck />} title="ZyControl" desc="Fluxos lógicos e gestão" color="blue" register={register} selected={produto} 
+                    features={['Painel Gestão', 'Árvore de Decisão']} 
+                  />
+                  <PlanCard 
+                    id="ZyBotAI" icon={<Bot />} title="ZyBotAI" desc="Inteligência Artificial" color="purple" register={register} selected={produto} 
+                    features={['Treinamento PDF', 'Linguagem Natural']} 
+                  />
+                  <PlanCard 
+                    id="ZyCore" icon={<Cpu />} title="ZyCore" desc="API e Integrações" color="orange" register={register} selected={produto} 
+                    features={['Sistema Próprio', 'API Custom']} 
+                  />
                 </div>
+              )}
 
-                <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-full"></div>
+              {categoria === 'website' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                {(produtoEscolhido === 'ZyStart' || produtoEscolhido === 'ZyControl') && (
-                  <div className="space-y-5">
-                     <div>
-                      <label className="block text-sm font-medium mb-1.5 ml-1">Frase de Saudação Inicial</label>
-                      <input {...register("saudacao")} className="w-full p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:ring-green-500 focus:ring-2 outline-none" placeholder="Ex: Olá! Bem-vindo à Zytech. Escolha uma opção:" />
-                    </div>
-                  </div>
-                )}
+                  <PlanCard 
+                    id="WebStart" icon={<Layout />} title="Site Start" desc="Presença Digital Rápida" color="cyan" register={register} selected={produto} 
+                    features={['Landing Page', 'Até 5 páginas detalhe', 'Formulário Contato']} 
+                  />
 
-                {produtoEscolhido === 'ZyStart' && (
-                  <div>
-                     <label className="block text-sm font-medium mb-1.5 ml-1">Quantidade estimada de opções no Menu</label>
-                     <input type="number" {...register("opcoes_menu")} className="w-full p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:ring-green-500 focus:ring-2 outline-none" placeholder="Ex: 4" />
-                  </div>
-                )}
+                  <PlanCard 
+                    id="WebControl" icon={<Lock />} title="Site Control" desc="Sistema com Área de Membros" color="indigo" register={register} selected={produto} 
+                    features={['Login/Auth', 'Dashboard Cliente', 'Gestão de Conteúdo']} 
+                  />
 
-                {/* ZYCONTROL ESPECÍFICO */}
-                {produtoEscolhido === 'ZyControl' && (
-                  <div>
-                     <label className="block text-sm font-medium mb-1.5 ml-1">Explique a lógica de fluxo desejada</label>
-                     <textarea {...register("logica_extra")} className="w-full p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:ring-green-500 focus:ring-2 outline-none h-32 resize-none" placeholder="Ex: Se cliente digitar 1, manda o cardápio. Se digitar 2, verifica horário de funcionamento. Se 3, transfere para humano..." />
-                  </div>
-                )}
+                  <PlanCard 
+                    id="WebCore" icon={<Code />} title="Site Core" desc="SaaS e Sistemas Complexos" color="rose" register={register} selected={produto} 
+                    features={['SaaS Completo', 'Banco de Dados Complexo', 'Escalabilidade Total']} 
+                  />
+                </div>
+              )}
 
-                {/* ZYBOT AI */}
-                {produtoEscolhido === 'ZyBotAI' && (
-                  <div className="space-y-5">
-                    <div className="bg-zinc-50 dark:bg-zinc-900/30 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                      <span className="block text-sm font-bold mb-4 text-zinc-700 dark:text-zinc-200">Funcionalidades da IA</span>
-                      <div className="space-y-3">
-                        {['Realizar Agendamentos', 'Vendas e Tirar Pedidos', 'Tirar Dúvidas (FAQ)', 'Suporte Técnico'].map((item) => (
-                          <label key={item} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
-                            <input type="checkbox" value={item} {...register("checklist_ia")} className="w-5 h-5 rounded text-green-500 focus:ring-green-500 border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900" />
-                            <span className="text-sm font-medium">{item}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-1.5 ml-1">Base de Conhecimento (Resumo)</label>
-                      <textarea {...register("base_conhecimento")} className="w-full p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:ring-green-500 focus:ring-2 outline-none h-32 resize-none" placeholder="Cole aqui ou descreva os textos que a IA deve usar para aprender sobre sua empresa..." />
-                    </div>
-                  </div>
-                )}
-
-                {produtoEscolhido === 'ZyCore' && (
-                  <div className="space-y-5">
-                     <div>
-                      <label className="block text-sm font-medium mb-1.5 ml-1">Personalidade do Bot (Persona)</label>
-                      <input {...register("persona")} className="w-full p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:ring-green-500 focus:ring-2 outline-none" placeholder="Ex: Vendedor agressivo, Atendente formal de luxo, Mascote divertido..." />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1.5 ml-1">Escopo Técnico Customizado</label>
-                      <textarea {...register("escopo_custom")} className="w-full p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:ring-green-500 focus:ring-2 outline-none h-32 resize-none" placeholder="Descreva as integrações necessárias (ERP, CRM), Webhooks específicos e regras de negócio complexas..." />
-                    </div>
-                  </div>
-                )}
+              <div className="flex gap-4 mt-10 justify-center">
+                <button type="button" onClick={() => setStep(2)} className="btn-secondary">Voltar</button>
+                <button type="button" onClick={() => setStep(4)} disabled={!produto} className="btn-primary">Configurar</button>
               </div>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="max-w-xl mx-auto space-y-6">
+              <h1 className="text-2xl font-bold text-center mb-6">Configurando <span className="text-green-500">{produto}</span></h1>
+
+              {categoria === 'chatbot' && (
+                <>
+                  <div className="input-group">
+                    <label>Link do Catálogo/Cardápio</label>
+                    <input {...register("link_catalogo")} className="input-zytech" placeholder="URL do Drive ou PDF" />
+                  </div>
+
+                  {(produto === 'ZyStart' || produto === 'ZyControl') && (
+                    <div className="input-group">
+                      <label>Saudação Inicial</label>
+                      <input {...register("bot_saudacao")} className="input-zytech" placeholder="Ex: Olá, bem-vindo!" />
+                    </div>
+                  )}
+
+                  {produto === 'ZyStart' && (
+                    <div className="input-group">
+                      <label>Qtd. Opções Menu</label>
+                      <input type="number" {...register("bot_opcoes")} className="input-zytech" />
+                    </div>
+                  )}
+
+                  {produto === 'ZyControl' && (
+                    <div className="input-group">
+                      <label>Lógica do Fluxo</label>
+                      <textarea {...register("bot_logica")} className="input-zytech h-24" placeholder="Descreva o caminho do cliente..." />
+                    </div>
+                  )}
+
+                  {produto === 'ZyBotAI' && (
+                    <div className="input-group">
+                      <label>Base de Conhecimento</label>
+                      <textarea {...register("bot_base")} className="input-zytech h-24" placeholder="Textos para a IA aprender..." />
+                    </div>
+                  )}
+
+                  {produto === 'ZyCore' && (
+                    <div className="input-group">
+                      <label>Escopo Custom</label>
+                      <textarea {...register("bot_custom")} className="input-zytech h-24" />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {categoria === 'website' && (
+                <>
+                  <div className="input-group">
+                    <label>Já possui Identidade Visual (Logo/Cores)?</label>
+                    <select {...register("site_identidade")} className="input-zytech">
+                      <option value="sim">Sim, já tenho</option>
+                      <option value="nao">Não, preciso criar</option>
+                    </select>
+                  </div>
+
+                  <div className="input-group">
+                    <label>Sites de Referência (O que você acha bonito?)</label>
+                    <input {...register("site_referencias")} className="input-zytech" placeholder="Cole links de inspiração..." />
+                  </div>
+
+                  {produto === 'WebStart' && (
+                    <div className="input-group">
+                      <label>Quais seriam as 5 páginas de detalhe?</label>
+                      <textarea {...register("site_paginas")} className="input-zytech h-24" placeholder="Ex: Sobre, Serviços, Contato..." />
+                    </div>
+                  )}
+
+                  {produto === 'WebControl' && (
+                    <>
+                      <div className="input-group">
+                        <label>Quem fará login no sistema?</label>
+                        <input {...register("site_login")} className="input-zytech" placeholder="Ex: Clientes para ver pedidos, Admins..." />
+                      </div>
+                      <div className="input-group">
+                        <label>O que deve ter no Dashboard?</label>
+                        <textarea {...register("site_dashboard")} className="input-zytech h-24" placeholder="Ex: Gráficos de vendas, status de pedido..." />
+                      </div>
+                    </>
+                  )}
+
+                  {produto === 'WebCore' && (
+                    <div className="input-group">
+                      <label>Descreva o sistema completo</label>
+                      <textarea {...register("site_custom")} className="input-zytech h-32" placeholder="Descreva todas as regras de negócio e integrações necessárias..." />
+                    </div>
+                  )}
+                </>
+              )}
 
               <div className="flex gap-4 pt-6">
-                <button type="button" onClick={() => setStep(2)} className="w-1/3 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold py-4 rounded-xl hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">
-                  Voltar
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isLoading}
-                  className="w-2/3 bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-xl shadow-green-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                      Enviando...
-                    </span>
-                  ) : (
-                    <>Finalizar Solicitação 🚀</>
-                  )}
+                <button type="button" onClick={() => setStep(3)} className="btn-secondary">Voltar</button>
+                <button type="submit" disabled={isLoading} className="btn-primary">
+                  {isLoading ? 'Enviando...' : 'Finalizar 🚀'}
                 </button>
               </div>
             </div>
@@ -420,6 +318,56 @@ export default function ZytechForm() {
 
         </form>
       </main>
+
+      <style jsx global>{`
+        .input-zytech { @apply w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:ring-2 focus:ring-green-500 outline-none transition-all; }
+        .btn-primary { @apply w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all; }
+        .btn-secondary { @apply w-full bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold py-3 rounded-xl hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors; }
+        .card-select { @apply relative cursor-pointer border border-zinc-700 p-6 rounded-2xl hover:border-green-500 transition-all flex flex-col items-center text-center bg-zinc-900/50 hover:bg-zinc-800; }
+        .input-group { @apply space-y-1; }
+        .input-group label { @apply text-sm font-medium ml-1 text-zinc-400; }
+      `}</style>
     </div>
+  );
+}
+function PlanCard({ id, icon, title, desc, color, register, selected, features }: any) {
+  const isSelected = selected === id;
+  const colorMap: any = {
+    green:  'border-green-500  bg-green-500/10  text-green-500',
+    blue:   'border-blue-500   bg-blue-500/10   text-blue-500',
+    purple: 'border-purple-500 bg-purple-500/10 text-purple-500',
+    orange: 'border-orange-500 bg-orange-500/10 text-orange-500',
+    cyan:   'border-cyan-500   bg-cyan-500/10   text-cyan-500',
+    indigo: 'border-indigo-500 bg-indigo-500/10 text-indigo-500',
+    rose:   'border-rose-500   bg-rose-500/10   text-rose-500',
+  };
+  
+  const activeClass = colorMap[color];
+
+  return (
+    <label className={`relative group cursor-pointer border rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 
+      ${isSelected ? `${activeClass} ring-1` : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-500'}`}>
+      <input type="radio" value={id} {...register("produto_plano")} className="hidden" />
+      
+      <div className={`mb-4 w-12 h-12 rounded-xl flex items-center justify-center ${isSelected ? 'bg-transparent' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'} ${isSelected ? activeClass.split(' ')[2] : ''}`}>
+        {icon}
+      </div>
+      
+      <h3 className="text-lg font-bold mb-2">{title}</h3>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4 h-10 leading-relaxed">{desc}</p>
+      
+      <ul className="space-y-2 mb-6">
+        {features.map((f: string, i: number) => (
+          <li key={i} className="flex gap-2 text-xs text-zinc-500 dark:text-zinc-300">
+            <CheckCircle size={14} className={isSelected ? activeClass.split(' ')[2] : 'text-zinc-500'} /> {f}
+          </li>
+        ))}
+      </ul>
+
+      <div className={`w-full py-2 rounded-lg text-center text-xs font-bold transition-colors 
+        ${isSelected ? activeClass.split(' ')[2].replace('text', 'bg') + ' text-white' : 'bg-zinc-100 dark:bg-zinc-800'}`}>
+        {isSelected ? 'Selecionado' : 'Escolher'}
+      </div>
+    </label>
   );
 }
